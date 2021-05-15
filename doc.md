@@ -37,3 +37,9 @@ php bin/console doctrine:fixtures:load --no-interaction
 ```bash
 php bin/console make:user
 ```
+
+## Mise en place d'API Platform
+
+``` bash
+composer require api
+```
