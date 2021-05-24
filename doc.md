@@ -40,6 +40,21 @@ php bin/console make:user
 
 ## Mise en place d'API Platform
 
-``` bash
+```bash
 composer require api
+```
+
+## Installation du WebPack-encore
+
+```bash
+composer require encore
+```
+
+## Installation des dépendances
+
+```bash
+npm install @babel/preset-react@^7.0.0 --save-dev
+npm install react@16.8.6
+npm install react@16.8.6 react-dom@16.8.6 react-router-dom@5.0.0 axios@0.18.0
+npm install moment
 ```
