@@ -1,119 +1,149 @@
-import React, {useEffect, useState} from 'react';
-import Pagination from "../components/Pagination";
-import axios from "axios";
-import moment from "moment";
-
+import React, {useState, useEffect} from 'react';
+import Field from "../components/forms/Field";
+import Select from "../components/forms/Select";
+import {Link} from "react-router-dom";
+import CustomersAPI from "../services/customersAPI";
 import InvoicesAPI from "../services/InvoicesAPI";
 
-const STATUS_CLASSES = {
-    PAID: "success",
-    SENT: "primary",
-    CANCELLED: "danger"
-};
 
-const STATUS_LABELS = {
-    PAID: "Payée",
-    SENT: "Envoyée",
-    CANCELLED: "Annulée"
-}
+const InvoicePage = ({match, history}) => {
 
-const InvoicePage = (props) => {
+    const {id = "new"} = match.params;
 
-    const [invoices, setInvoices] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [search, setSearch] = useState('');
-    const itemPerPage = 10;
+    const [invoice, setInvoice] = useState({
+        amount: "",
+        customer: "",
+        status: "SENT"
+    });
 
-    // Récupération des invoices auprès de l'API
-    const fetchInvoices = async () => {
+    const [customers, setCustomers] = useState([]);
+    const [editing, setEditing] = useState(false);
+    const [errors, setErrors] = useState({
+        amount: "",
+        customer: "",
+        status: ""
+    });
+
+    // Récupération des clients
+    const fetchCustomers = async () => {
         try {
-            const data = await InvoicesAPI.findAll();
-            setInvoices(data);
+            const data = await CustomersAPI.findAll();
+            setCustomers(data);
+            if (!invoice.customer && id === "new") setInvoice({...invoice, customer: data[0].id});
+            console.log(invoice);
         } catch (error) {
             console.log(error.response);
+            history.replace("/invoices");
+            // TODO : flash notification erreur
         }
-    };
+    }
 
-    // Charger les invoices au chargement du composant
+    // Récupération d'une facture
+    const fetchInvoice = async id => {
+        try {
+            const {amount, status, customer} = await InvoicesAPI.find(id);
+            setInvoice({amount, status, customer: customer.id});
+            console.log(invoice);
+        } catch (error) {
+            // TODO : Notification erreurs
+            history.replace("/invoices");
+        }
+    }
+
+    // Récupération de la liste des clients à chaque chargement du composant
     useEffect(() => {
-        fetchInvoices();
+        fetchCustomers();
     }, []);
 
-    // Gestion du changement de page
-    const handlePageChange = page => setCurrentPage(page);
+    // Récupération de la bonne facture lorsque l'identifiant change
+    useEffect(() => {
+        console.log(id);
+        if (id !== "new") {
+            setEditing(true);
+            fetchInvoice(id);
+        }
+    }, [id]);
 
-    // Gestion de la recherche
-    const handleSearch = ({currentTarget}) => {
-        setSearch(currentTarget.value);
-        setCurrentPage(1);
+
+    const handleChange = ({currentTarget}) => {
+        const {name, value} = currentTarget;
+        setInvoice({...invoice, [name]: value});
     };
 
-    // Gestion de la suppression
-    const handleDelete = async id => {
-        const originalInvoices = [...invoices];
-
-        setInvoices(invoices.filter(invoice => invoice.id !== id))
+    // Gestion de la soumission du formulaire
+    const handleSubmit = async event => {
+        event.preventDefault();
 
         try {
-            await InvoicesAPI.delete(id);
-        } catch (error) {
-            console.log(error.response);
-            setInvoices(originalInvoices);
+            if (editing) {
+                await InvoicesAPI.update(id, invoice);
+                // TODO : Flash Notification succes
+            } else {
+                await InvoicesAPI.create(invoice);
+                // TODO : Flash Notification succes
+                history.replace("/invoices");
+            }
+        } catch ({response}) {
+            const {violations} = response.data;
+            if (violations) {
+                const apiErrors = {}
+                violations.forEach(({propertyPath, message}) => {
+                    apiErrors[propertyPath] = message;
+                });
+                setErrors(apiErrors);
+                // Todo : flash de notification d'erreurs
+            }
         }
-    };
 
-    // Gestion du format de date
-    const formatDate = (str) => moment(str).format('DD/MM/YYYY');
-
-    // Gestion de la recherche
-    const filteredInvoices = invoices.filter(
-        i =>
-            i.customer.lastName.toLowerCase().includes(search.toLowerCase()) ||
-            i.customer.firstName.toLowerCase().includes(search.toLowerCase()) ||
-            i.amount.toString().includes(search.toLowerCase()) ||
-            STATUS_LABELS[i.status].toLowerCase().includes(search.toLowerCase())
-    );
-
-    // Pagination des données
-    const paginatedInvoices = Pagination.getData(filteredInvoices, currentPage, itemPerPage);
+    }
 
     return (
         <>
-            <h1>Liste des factures</h1>
+            {editing && <h1>Modification d'une facture</h1> || <h1>Création d'une facture</h1>}
 
-            <div className="form-group">
-                <input type="text" onChange={handleSearch} value={search} className="form-control"
-                       placeholder="Rechercher..."/>
-            </div>
-
-            <table className="table table-hover">
-                <thead>
-                <tr>
-                    <th>Numéro</th>
-                    <th>Client</th>
-                    <th className="text-center">Date d'envoi</th>
-                    <th className="text-center">Statut</th>
-                    <th className="text-center">Montant</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {paginatedInvoices.map(invoice => <tr key={invoice.id}>
-                    <td>{invoice.chrono}</td>
-                    <td><a href="#">{invoice.customer.firstName} {invoice.customer.lastName}</a></td>
-                    <td className="text-center">{formatDate(invoice.sentAt)}</td>
-                    <td className="text-center"><span className={"badge badge-" + STATUS_CLASSES[invoice.status]}>{STATUS_LABELS[invoice.status]}</span></td>
-                    <td className="text-center">{invoice.amount.toLocaleString()} €</td>
-                    <td>
-                        <button className="btn btn-sm btn-primary mr-1">Éditer</button>
-                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(invoice.id)}>Supprimer</button>
-                    </td>
-                </tr>)}
-                </tbody>
-            </table>
-            <Pagination currentPage={currentPage} itemsPerPage={itemPerPage} onPageChanged={handlePageChange} length={filteredInvoices.length} />
+            <form onSubmit={handleSubmit}>
+                <Field
+                    name="amount"
+                    type="number"
+                    placeHolder="Montant de la facture"
+                    label="Montant"
+                    onChange={handleChange}
+                    value={invoice.amount}
+                    error={errors.amount}
+                />
+                <Select
+                    name="customer"
+                    label="Client"
+                    value={invoice.customer}
+                    error={errors.customer}
+                    onChange={handleChange}
+                >
+                    {customers.map(customer =>
+                        <option
+                            key={customer.id}
+                            value={customer.id}
+                        >
+                            {customer.firstName} {customer.lastName}
+                        </option>
+                    )}
+                </Select>
+                <Select
+                    name="status"
+                    label="Status"
+                    value={invoice.status}
+                    error={errors.status}
+                    onChange={handleChange}>
+                    <option value="SENT">Envoyée</option>
+                    <option value="PAID">Payée</option>
+                    <option value="CANCELLED">Annulée</option>
+                </Select>
+                <div className="form-group">
+                    <button type="submit" className="btn btn-success">Enregistrer</button>
+                    <Link to="/invoices" className="btn btn-link">Retour aux factures</Link>
+                </div>
+            </form>
         </>
     );
-};
+}
 
 export default InvoicePage;

@@ -8,10 +8,13 @@ import HomePage from "./pages/HomePage";
 import {HashRouter, Switch, Route, withRouter} from "react-router-dom"
 import CustomersPage from "./pages/CustomersPage";
 import InvoicePage from "./pages/InvoicePage";
-import LoginPage from "./pages/loginPage";
+import LoginPage from "./pages/LoginPage";
 import AuthAPI from "./services/authAPI"
 import AuthContext from "./contexts/AuthContext";
 import PrivateRoutes from "./components/PrivateRoutes";
+import CustomerPage from "./pages/CustomerPage";
+import InvoicesPages from "./pages/InvoicesPages";
+import RegisterPage from "./pages/RegisterPage";
 
 // localhost:8000/#/customers
 
@@ -31,7 +34,10 @@ const App = () => {
                 <main className="container pt-5">
                     <Switch>
                         <Route path="/login" component={LoginPage}/>
-                        <PrivateRoutes path="/invoices" component={InvoicePage}/>
+                        <Route path="/register" component={RegisterPage}/>
+                        <PrivateRoutes path="/invoices/:id" component={InvoicePage}/>
+                        <PrivateRoutes path="/invoices" component={InvoicesPages}/>
+                        <PrivateRoutes path="/customers/:id" component={CustomerPage}/>
                         <PrivateRoutes path="/customers" component={CustomersPage}/>
                         <Route path="/" component={HomePage}/>
 
