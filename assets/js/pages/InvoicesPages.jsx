@@ -4,6 +4,8 @@ import moment from "moment";
 
 import InvoicesAPI from "../services/InvoicesAPI";
 import {Link} from "react-router-dom";
+import {toast} from "react-toastify";
+import TableLoader from "../components/loaders/TableLoader";
 
 const STATUS_CLASSES = {
     PAID: "success",
@@ -19,6 +21,7 @@ const STATUS_LABELS = {
 
 const InvoicesPages = (props) => {
 
+    const [loading, setLoading] = useState(true);
     const [invoices, setInvoices] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState('');
@@ -29,8 +32,9 @@ const InvoicesPages = (props) => {
         try {
             const data = await InvoicesAPI.findAll();
             setInvoices(data);
+            setLoading(false);
         } catch (error) {
-            console.log(error.response);
+            toast.error("Erreur lors du chargement des factures !");
         }
     };
 
@@ -56,8 +60,9 @@ const InvoicesPages = (props) => {
 
         try {
             await InvoicesAPI.delete(id);
+            toast.success("La facture a bien été supprimée");
         } catch (error) {
-            console.log(error.response);
+            toast.error("Une erreur est survenue")
             setInvoices(originalInvoices);
         }
     };
@@ -101,10 +106,10 @@ const InvoicesPages = (props) => {
                     <th></th>
                 </tr>
                 </thead>
-                <tbody>
+                {!loading && <tbody>
                 {paginatedInvoices.map(invoice => <tr key={invoice.id}>
                     <td>{invoice.chrono}</td>
-                    <td><a href="#">{invoice.customer.firstName} {invoice.customer.lastName}</a></td>
+                    <td><Link to={"/customers/" + invoice.customer.id}>{invoice.customer.firstName} {invoice.customer.lastName}</Link></td>
                     <td className="text-center">{formatDate(invoice.sentAt)}</td>
                     <td className="text-center"><span
                         className={"badge badge-" + STATUS_CLASSES[invoice.status]}>{STATUS_LABELS[invoice.status]}</span>
@@ -116,12 +121,13 @@ const InvoicesPages = (props) => {
                         </button>
                     </td>
                 </tr>)}
-                </tbody>
+                </tbody>}
             </table>
+            {loading && <TableLoader/>}
             <Pagination currentPage={currentPage} itemsPerPage={itemPerPage} onPageChanged={handlePageChange}
                         length={filteredInvoices.length}/>
         </>
     );
-};
+}
 
 export default InvoicesPages;

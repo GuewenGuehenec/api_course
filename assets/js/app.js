@@ -15,6 +15,8 @@ import PrivateRoutes from "./components/PrivateRoutes";
 import CustomerPage from "./pages/CustomerPage";
 import InvoicesPages from "./pages/InvoicesPages";
 import RegisterPage from "./pages/RegisterPage";
+import {toast, ToastContainer} from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 // localhost:8000/#/customers
 
@@ -30,7 +32,6 @@ const App = () => {
         <AuthContext.Provider value={{isAuthenticated, setIsAuthenticated}}>
             <HashRouter>
                 <NavbarWithRouter/>
-
                 <main className="container pt-5">
                     <Switch>
                         <Route path="/login" component={LoginPage}/>
@@ -47,8 +48,8 @@ const App = () => {
                         {/*    render={(props) => isAuthenticated ? (<CustomersPage {...props} />) : (<Redirect to="/login"/>)}/>*/}
                     </Switch>
                 </main>
-
             </HashRouter>
+            <ToastContainer position={toast.POSITION.BOTTOM_LEFT} />
         </AuthContext.Provider>
 
     );

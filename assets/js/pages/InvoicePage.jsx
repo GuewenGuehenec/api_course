@@ -4,6 +4,7 @@ import Select from "../components/forms/Select";
 import {Link} from "react-router-dom";
 import CustomersAPI from "../services/customersAPI";
 import InvoicesAPI from "../services/InvoicesAPI";
+import {toast} from "react-toastify";
 
 
 const InvoicePage = ({match, history}) => {
@@ -30,11 +31,9 @@ const InvoicePage = ({match, history}) => {
             const data = await CustomersAPI.findAll();
             setCustomers(data);
             if (!invoice.customer && id === "new") setInvoice({...invoice, customer: data[0].id});
-            console.log(invoice);
         } catch (error) {
-            console.log(error.response);
+            toast.error("Impossible de charger les clients");
             history.replace("/invoices");
-            // TODO : flash notification erreur
         }
     }
 
@@ -43,9 +42,8 @@ const InvoicePage = ({match, history}) => {
         try {
             const {amount, status, customer} = await InvoicesAPI.find(id);
             setInvoice({amount, status, customer: customer.id});
-            console.log(invoice);
         } catch (error) {
-            // TODO : Notification erreurs
+            toast.error("Impossible de charger la facture demandée")
             history.replace("/invoices");
         }
     }
@@ -77,10 +75,10 @@ const InvoicePage = ({match, history}) => {
         try {
             if (editing) {
                 await InvoicesAPI.update(id, invoice);
-                // TODO : Flash Notification succes
+                toast.success("La facture à bien été modifiée");
             } else {
                 await InvoicesAPI.create(invoice);
-                // TODO : Flash Notification succes
+                toast.success("La facture à bien été enregistrée");
                 history.replace("/invoices");
             }
         } catch ({response}) {
@@ -91,7 +89,7 @@ const InvoicePage = ({match, history}) => {
                     apiErrors[propertyPath] = message;
                 });
                 setErrors(apiErrors);
-                // Todo : flash de notification d'erreurs
+                toast.error("Des erreurs dans votre formulaire");
             }
         }
 

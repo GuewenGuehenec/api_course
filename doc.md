@@ -58,4 +58,6 @@ npm install react@16.8.6
 npm install react@16.8.6 react-dom@16.8.6 react-router-dom@5.0.0 axios@0.18.0
 npm install moment
 npm install jwt-decode
+npm install react-toastify
+npm i react-content-loader
 ```
